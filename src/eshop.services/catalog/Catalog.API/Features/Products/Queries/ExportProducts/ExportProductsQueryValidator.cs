@@ -3,12 +3,8 @@ using FluentValidation;
 namespace Catalog.API.Features.Products.Queries.ExportProducts;
 
 /// <summary>
-/// Validates the ExportProductsQuery to ensure that all required conditions are met.
+/// Validates the ExportProductsQuery to ensure that all filter parameters meet the defined constraints.
 /// </summary>
-/// <remarks>
-/// Currently no specific validation is required for this query as it has no parameters.
-/// This validator is included for consistency and future extensibility.
-/// </remarks>
 public class ExportProductsQueryValidator : AbstractValidator<ExportProductsQuery>
 {
     /// <summary>
@@ -16,8 +12,32 @@ public class ExportProductsQueryValidator : AbstractValidator<ExportProductsQuer
     /// </summary>
     public ExportProductsQueryValidator()
     {
-        // Pas de validation nécessaire pour cette query
-        // Le validator est créé pour maintenir la cohérence avec les autres features
+        // Validation des prix
+        RuleFor(query => query.MinPrice)
+            .GreaterThanOrEqualTo(0)
+            .When(query => query.MinPrice.HasValue)
+            .WithMessage("Minimum price must be greater than or equal to 0");
+
+        RuleFor(query => query.MaxPrice)
+            .GreaterThanOrEqualTo(0)
+            .When(query => query.MaxPrice.HasValue)
+            .WithMessage("Maximum price must be greater than or equal to 0");
+
+        // Validation que MaxPrice >= MinPrice
+        RuleFor(query => query.MaxPrice)
+            .GreaterThanOrEqualTo(query => query.MinPrice!.Value)
+            .When(query => query.MinPrice.HasValue && query.MaxPrice.HasValue)
+            .WithMessage("Maximum price must be greater than or equal to minimum price");
+
+        // Validation du champ de tri
+        RuleFor(query => query.SortBy)
+            .Must(sortBy => new[] { "name", "price", "date" }.Contains(sortBy.ToLower()))
+            .WithMessage("SortBy must be one of: Name, Price, Date");
+
+        // Validation de l'ordre de tri
+        RuleFor(query => query.SortOrder)
+            .Must(sortOrder => new[] { "asc", "desc" }.Contains(sortOrder.ToLower()))
+            .WithMessage("SortOrder must be either Asc or Desc");
     }
 }
 

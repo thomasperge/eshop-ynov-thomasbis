@@ -1,28 +1,72 @@
 using BuildingBlocks.CQRS;
 using Catalog.API.Models;
 using Marten;
+using Marten.Linq;
 using OfficeOpenXml;
 
 namespace Catalog.API.Features.Products.Queries.ExportProducts;
 
 /// <summary>
-/// Handles the ExportProducts query to export all products from the database to an Excel file.
+/// Handles the ExportProducts query to export filtered products from the database to an Excel file.
 /// </summary>
 public class ExportProductsQueryHandler(IDocumentSession documentSession) : IQueryHandler<ExportProductsQuery, ExportProductsQueryResult>
 {
     /// <summary>
-    /// Handles the processing of the ExportProducts query, which reads all products and creates an Excel file.
+    /// Handles the processing of the ExportProducts query, which reads filtered products and creates an Excel file.
     /// </summary>
-    /// <param name="request">The ExportProducts query.</param>
+    /// <param name="request">The ExportProducts query with optional filters.</param>
     /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
     /// <returns>A task representing the operation, containing the Excel file as byte array.</returns>
     public async Task<ExportProductsQueryResult> Handle(ExportProductsQuery request,
         CancellationToken cancellationToken)
     {
-        // Récupérer tous les produits de la base de données
-        var products = await documentSession.Query<Product>()
-            .OrderBy(p => p.Name)
-            .ToListAsync(cancellationToken);
+        // Commencer avec tous les produits
+        IMartenQueryable<Product> query = documentSession.Query<Product>();
+
+        // Filtre 1 : Recherche par terme (nom ou description)
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            var searchTermLower = request.SearchTerm.ToLower();
+            query = (IMartenQueryable<Product>)query.Where(p =>
+                p.Name.ToLower().Contains(searchTermLower) ||
+                p.Description.ToLower().Contains(searchTermLower));
+        }
+
+        // Filtre 2 : Recherche par catégories
+        if (request.Categories != null && request.Categories.Any())
+        {
+            query = (IMartenQueryable<Product>)query.Where(p => p.Categories.Any(c => request.Categories.Contains(c)));
+        }
+
+        // Filtre 3 : Prix minimum
+        if (request.MinPrice.HasValue)
+        {
+            query = (IMartenQueryable<Product>)query.Where(p => p.Price >= request.MinPrice.Value);
+        }
+
+        // Filtre 4 : Prix maximum
+        if (request.MaxPrice.HasValue)
+        {
+            query = (IMartenQueryable<Product>)query.Where(p => p.Price <= request.MaxPrice.Value);
+        }
+
+        // Appliquer le tri
+        IQueryable<Product> orderedQuery = request.SortBy.ToLower() switch
+        {
+            "price" => request.SortOrder.ToLower() == "desc"
+                ? query.OrderByDescending(p => p.Price)
+                : query.OrderBy(p => p.Price),
+            "date" => request.SortOrder.ToLower() == "desc"
+                ? query.OrderByDescending(p => p.Id)
+                : query.OrderBy(p => p.Id),
+            _ => request.SortOrder.ToLower() == "desc"
+                ? query.OrderByDescending(p => p.Name)
+                : query.OrderBy(p => p.Name)
+        };
+
+        // Récupérer les produits filtrés
+        var productsResult = await orderedQuery.ToListAsync(cancellationToken);
+        var products = productsResult.ToList();
 
         // Configurer la licence EPPlus
         ExcelPackage.LicenseContext = LicenseContext.NonCommercial;

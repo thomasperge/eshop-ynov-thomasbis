@@ -148,14 +148,34 @@ public class ProductsController(ISender sender) : ControllerBase
     }
 
     /// <summary>
-    /// Exports all products to an Excel file.
+    /// Exports products to an Excel file with optional filters.
     /// </summary>
-    /// <returns>An Excel file containing all products from the database.</returns>
+    /// <param name="searchTerm">Optional search term to filter by name or description.</param>
+    /// <param name="categories">Optional list of categories to filter by.</param>
+    /// <param name="minPrice">Optional minimum price filter.</param>
+    /// <param name="maxPrice">Optional maximum price filter.</param>
+    /// <param name="sortBy">Field to sort by: Name, Price, or Date (default: Name).</param>
+    /// <param name="sortOrder">Sort order: Asc or Desc (default: Asc).</param>
+    /// <returns>An Excel file containing the filtered products from the database.</returns>
     [HttpGet("export")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ExportProducts()
+    [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ExportProducts(
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] List<string>? categories = null,
+        [FromQuery] decimal? minPrice = null,
+        [FromQuery] decimal? maxPrice = null,
+        [FromQuery] string sortBy = "Name",
+        [FromQuery] string sortOrder = "Asc")
     {
-        var query = new ExportProductsQuery();
+        var query = new ExportProductsQuery(
+            searchTerm,
+            categories,
+            minPrice,
+            maxPrice,
+            sortBy,
+            sortOrder);
+        
         var result = await sender.Send(query);
         
         return File(result.FileContent, result.ContentType, result.FileName);
