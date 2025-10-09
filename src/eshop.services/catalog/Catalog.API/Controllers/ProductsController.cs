@@ -3,6 +3,7 @@ using Catalog.API.Features.Products.Commands.DeleteProduct;
 using Catalog.API.Features.Products.Commands.ImportProducts;
 using Catalog.API.Features.Products.Commands.UpdateProduct;
 using Catalog.API.Features.Products.Queries.GetProductById;
+using Catalog.API.Features.Products.Queries.GetProductByCategory;
 using Catalog.API.Features.Products.Queries.ReadProducts;
 using Catalog.API.Models;
 using MediatR;
@@ -42,7 +43,7 @@ public class ProductsController(ISender sender) : ControllerBase
         if (string.IsNullOrWhiteSpace(category))
             return BadRequest("Category is required");
 
-        var result = await sender.Send(new ReadProductsQuery(pageNumber, pageSize, category));
+        var result = await sender.Send(new GetProductByCategoryQuery(category));
         return Ok(result);
     }
 
