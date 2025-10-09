@@ -1,5 +1,6 @@
 using Catalog.API.Features.Products.Commands.CreateProduct;
 using Catalog.API.Features.Products.Commands.DeleteProduct;
+using Catalog.API.Features.Products.Commands.ImportProducts;
 using Catalog.API.Features.Products.Commands.UpdateProduct;
 using Catalog.API.Features.Products.Queries.GetProductById;
 using Catalog.API.Features.Products.Queries.GetProductByCategory;
@@ -107,5 +108,26 @@ public class ProductsController(ISender sender) : ControllerBase
     {
         var result = await sender.Send(new DeleteProductCommand(id));
         return Ok(result.IsSuccessful);
+    }
+
+    /// <summary>
+    /// Imports products from an Excel file.
+    /// </summary>
+    /// <param name="excelFile">The Excel file containing the products to import.</param>
+    /// <returns>A result object containing the import statistics.</returns>
+    [HttpPost("import")]
+    [ProducesResponseType(typeof(ImportProductsCommandResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ImportProductsCommandResult>> ImportProducts(IFormFile excelFile)
+    {
+        var command = new ImportProductsCommand(excelFile);
+        var result = await sender.Send(command);
+        
+        if (result.FailedImports > 0 && result.SuccessfullyImported == 0)
+        {
+            return BadRequest(result);
+        }
+        
+        return Ok(result);
     }
 }
