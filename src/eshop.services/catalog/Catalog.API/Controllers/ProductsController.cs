@@ -2,9 +2,11 @@ using Catalog.API.Features.Products.Commands.CreateProduct;
 using Catalog.API.Features.Products.Commands.DeleteProduct;
 using Catalog.API.Features.Products.Commands.ImportProducts;
 using Catalog.API.Features.Products.Commands.UpdateProduct;
+using Catalog.API.Features.Products.Queries.ExportProducts;
 using Catalog.API.Features.Products.Queries.GetProductById;
 using Catalog.API.Features.Products.Queries.GetProductByCategory;
 using Catalog.API.Features.Products.Queries.ReadProducts;
+using Catalog.API.Features.Products.Queries.SearchProducts;
 using Catalog.API.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -105,5 +107,78 @@ public class ProductsController(ISender sender) : ControllerBase
         }
         
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Searches products with dynamic filters including search term, categories, price range, sorting, and pagination.
+    /// </summary>
+    /// <param name="searchTerm">Optional search term to filter by name or description.</param>
+    /// <param name="categories">Optional list of categories to filter by.</param>
+    /// <param name="minPrice">Optional minimum price filter.</param>
+    /// <param name="maxPrice">Optional maximum price filter.</param>
+    /// <param name="pageNumber">The page number for pagination (default: 1).</param>
+    /// <param name="pageSize">The number of items per page (default: 10).</param>
+    /// <param name="sortBy">Field to sort by: Name, Price, or Date (default: Name).</param>
+    /// <param name="sortOrder">Sort order: Asc or Desc (default: Asc).</param>
+    /// <returns>A result object containing the filtered products and pagination metadata.</returns>
+    [HttpGet("search")]
+    [ProducesResponseType(typeof(SearchProductsQueryResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<SearchProductsQueryResult>> SearchProducts(
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] List<string>? categories = null,
+        [FromQuery] decimal? minPrice = null,
+        [FromQuery] decimal? maxPrice = null,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string sortBy = "Name",
+        [FromQuery] string sortOrder = "Asc")
+    {
+        var query = new SearchProductsQuery(
+            searchTerm,
+            categories,
+            minPrice,
+            maxPrice,
+            pageNumber,
+            pageSize,
+            sortBy,
+            sortOrder);
+        
+        var result = await sender.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Exports products to an Excel file with optional filters.
+    /// </summary>
+    /// <param name="searchTerm">Optional search term to filter by name or description.</param>
+    /// <param name="categories">Optional list of categories to filter by.</param>
+    /// <param name="minPrice">Optional minimum price filter.</param>
+    /// <param name="maxPrice">Optional maximum price filter.</param>
+    /// <param name="sortBy">Field to sort by: Name, Price, or Date (default: Name).</param>
+    /// <param name="sortOrder">Sort order: Asc or Desc (default: Asc).</param>
+    /// <returns>An Excel file containing the filtered products from the database.</returns>
+    [HttpGet("export")]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ExportProducts(
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] List<string>? categories = null,
+        [FromQuery] decimal? minPrice = null,
+        [FromQuery] decimal? maxPrice = null,
+        [FromQuery] string sortBy = "Name",
+        [FromQuery] string sortOrder = "Asc")
+    {
+        var query = new ExportProductsQuery(
+            searchTerm,
+            categories,
+            minPrice,
+            maxPrice,
+            sortBy,
+            sortOrder);
+        
+        var result = await sender.Send(query);
+        
+        return File(result.FileContent, result.ContentType, result.FileName);
     }
 }
