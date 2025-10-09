@@ -1,13 +1,13 @@
 using FluentValidation;
 
-namespace Catalog.API.Features.Products.Commands.GetProductByCategory;
+namespace Catalog.API.Features.Products.Queries.GetProductByCategory;
 
 /// <summary>
 /// Validates the GetProductByCategoryQuery.
 /// </summary>
-public class GetProductByCategoryCommandValidator : AbstractValidator<GetProductByCategoryCommand>
+public class GetProductByCategoryQueryValidator : AbstractValidator<GetProductByCategoryQuery>
 {
-    public GetProductByCategoryCommandValidator()
+    public GetProductByCategoryQueryValidator()
     {
         RuleFor(x => x.Category)
             .NotEmpty().WithMessage("Category is required")
