@@ -9,18 +9,33 @@ public class ShoppingCart
 {
     [Identity]
     public string UserName { get; set; } = string.Empty;
-    public IEnumerable<ShoppingCartItem> Items { get; set; } = [];
-    
+
+    public List<ShoppingCartItem> Items { get; set; } = new();
+
     public decimal Total => Items.Sum(item => item.Price * item.Quantity);
 
     public ShoppingCart(string userName)
     {
-        UserName  = userName;
+        UserName = userName;
     }
 
     public ShoppingCart()
     {
-        
     }
-    
+
+    /// <summary>
+    /// Ajoute un article au panier ou met à jour sa quantité s'il existe déjà
+    /// </summary>
+    public void AddItem(ShoppingCartItem item)
+    {
+        var existingItem = Items.FirstOrDefault(i => i.ProductId == item.ProductId);
+        if (existingItem != null)
+        {
+            existingItem.Quantity += item.Quantity;
+        }
+        else
+        {
+            Items.Add(item);
+        }
+    }
 }

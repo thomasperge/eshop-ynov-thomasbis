@@ -38,6 +38,16 @@ public interface IBasketRepository
     /// A task that represents the asynchronous operation. The task result contains the created shopping cart.
     /// </returns>
     Task<ShoppingCart> CreateBasketAsync(ShoppingCart basket, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Retrieves the shopping cart for the specified user by their username.
+    /// </summary>
+    /// <param name="basket">The basket.</param>
+    /// <param name="cancellationToken">Optional. A token to cancel the asynchronous operation.</param>
+    /// <returns>The shopping cart associated with the specified username, or null if no such cart exists.</returns>
+    /// <exception cref="BasketNotFoundException">Thrown when no shopping cart is found for the specified username.</exception>
+    Task<ShoppingCart> UpdateBasketAsync(ShoppingCart basket, CancellationToken cancellationToken = default);
+
     public async Task<ShoppingCart> UpdateBasketAsync(ShoppingCart basket, CancellationToken cancellationToken = default)
     {
         // Tu peux réutiliser la même logique que CreateBasketAsync :
