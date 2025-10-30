@@ -1,6 +1,7 @@
 using Basket.API.Features.Baskets.Commands.CreateBasket;
 using Basket.API.Features.Baskets.Commands.DeleteBasket;
 using Basket.API.Features.Baskets.Queries.GetBasketByUserName;
+using Basket.API.Features.Baskets.Commands.UpdateBasketItemQuantity;
 using Basket.API.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -58,8 +59,23 @@ public class BasketsController (ISender sender) : ControllerBase
         return Ok(result.IsSuccess);
     }
     
-    // TODO Update basket product quantity
-    
-    //TODO Delete item in user basket
-    
+    [HttpPut]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(NotFoundObjectResult), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<bool>> UpdateBasket(string userName, [FromBody] ShoppingCart cart)
+    {
+        if (cart == null || cart.Items == null || !cart.Items.Any())
+            return BadRequest("Le panier est vide ou invalide.");
+        
+        if (!string.Equals(userName, cart.UserName, StringComparison.OrdinalIgnoreCase))
+            return BadRequest("Le nom d'utilisateur du panier ne correspond pas à celui de la route.");
+        
+        var result = await sender.Send(new CreateBasketCommand(cart)); 
+
+        if (result == null)
+            return NotFound($"Aucun panier trouvé pour l'utilisateur : '{userName}'.");
+
+        return Ok(true);
+    }
 }
