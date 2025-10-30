@@ -1,6 +1,7 @@
+using Basket.API.Data.Repositories;
 using BuildingBlocks.Behaviors;
 using BuildingBlocks.Middlewares;
-using Catalog.API.Data;
+using Discount.Grpc;
 using FluentValidation;
 using HealthChecks.UI.Client;
 using Marten;
@@ -11,10 +12,6 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 // Add services to the container.
-
-builder.Services.AddControllers();
-
-// Mediator Pattern - CQRS
 builder.Services.AddMediatR(config =>
 {
     config.RegisterServicesFromAssembly(typeof(Program).Assembly);
@@ -25,20 +22,42 @@ builder.Services.AddMediatR(config =>
 
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 
-// Management PostGreSQl as NOSQL
 builder.Services.AddMarten(options =>
     {
-        options.Connection(configuration.GetConnectionString("CatalogConnection") ?? string.Empty);
+        options.Connection(configuration.GetConnectionString("BasketConnection") ?? string.Empty);
     })
     .UseLightweightSessions();
 
-// Initiate Database
-if(builder.Environment.IsDevelopment())
-    builder.Services.InitializeMartenWith<CatalogInitialData>();
+builder.Services.AddScoped<IBasketRepository, BasketRepository>();
+builder.Services.Decorate<IBasketRepository, BasketRepositoryCache>();
 
-// Health Check
+builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = configuration.GetConnectionString("RedisConnection") ?? string.Empty;
+        options.InstanceName = "basket-api";
+    }
+   );
+
+builder.Services.AddGrpcClient<DiscountProtoService.DiscountProtoServiceClient>(options =>
+{
+    options.Address = new Uri(configuration.GetValue<string>("GrpcSettings:DiscountUrl") ?? string.Empty);   
+}).ConfigurePrimaryHttpMessageHandler (() =>
+{
+    var handler = new HttpClientHandler();
+    
+    if (builder.Environment.IsDevelopment())
+    {
+        handler.ServerCertificateCustomValidationCallback = 
+            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+    }
+    return handler;
+});
+
+builder.Services.AddControllers();
+
 builder.Services.AddHealthChecks()
-    .AddNpgSql(configuration.GetConnectionString("CatalogConnection")!);
+    .AddNpgSql(configuration.GetConnectionString("BasketConnection")!)
+    .AddRedis(configuration.GetConnectionString("RedisConnection")!);
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -57,10 +76,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Global Exception
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 
-// Health check Endpoint
 app.UseHealthChecks("/health", new HealthCheckOptions()
 {
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
