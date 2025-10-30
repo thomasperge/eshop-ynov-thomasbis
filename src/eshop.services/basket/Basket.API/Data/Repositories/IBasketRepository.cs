@@ -47,10 +47,4 @@ public interface IBasketRepository
     /// <returns>The shopping cart associated with the specified username, or null if no such cart exists.</returns>
     /// <exception cref="BasketNotFoundException">Thrown when no shopping cart is found for the specified username.</exception>
     Task<ShoppingCart> UpdateBasketAsync(ShoppingCart basket, CancellationToken cancellationToken = default);
-
-    public async Task<ShoppingCart> UpdateBasketAsync(ShoppingCart basket, CancellationToken cancellationToken = default)
-    {
-        // Tu peux réutiliser la même logique que CreateBasketAsync :
-        return await CreateBasketAsync(basket, cancellationToken);
-    }
 }
