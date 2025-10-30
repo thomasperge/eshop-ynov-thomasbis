@@ -76,5 +76,20 @@ public class BasketRepositoryCache(IBasketRepository repository, IDistributedCac
         var cacheKey = GenerateKey(basket.UserName);
         await cache.SetObjectAsync(cacheKey, createdBasket, cancellationToken);
         return createdBasket;
+    }    
+    
+    /// <summary>
+    /// Creates a new shopping cart and stores it in the underlying repository and distributed cache.
+    /// </summary>
+    /// <param name="basket">The shopping cart to be created.</param>
+    /// <param name="cancellationToken">An optional token to monitor for cancellation requests.</param>
+    /// <returns>The created shopping cart.</returns>
+    public async Task<ShoppingCart> UpdateBasketAsync(ShoppingCart basket,
+        CancellationToken cancellationToken = default)
+    {
+        var createdBasket = await repository.CreateBasketAsync(basket, cancellationToken);
+        var cacheKey = GenerateKey(basket.UserName);
+        await cache.SetObjectAsync(cacheKey, createdBasket, cancellationToken);
+        return createdBasket;
     }
 }
