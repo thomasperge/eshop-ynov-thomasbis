@@ -60,6 +60,5 @@ public class BasketsController (ISender sender) : ControllerBase
     
     // TODO Update basket product quantity
     
-    //TODO Delete item in user basket
-    
+    // TODO Delete item in user basket
 }

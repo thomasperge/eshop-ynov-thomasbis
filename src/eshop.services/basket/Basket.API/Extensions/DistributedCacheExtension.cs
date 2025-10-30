@@ -40,10 +40,13 @@ public static class DistributedCacheExtensions
     /// A task that represents the asynchronous operation of storing the serialized object
     /// in the cache.
     /// </returns>
-    public static Task SetObjectAsync<T>(this IDistributedCache cache, string key, T value,
-        CancellationToken token = default)
+    public static Task SetObjectAsync<T>(this IDistributedCache cache, string key, T value, CancellationToken token = default)
     {
         var data = JsonSerializer.SerializeToUtf8Bytes(value);
-        return cache.SetAsync(key, data, token);
+        var options = new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) // Met 1 minute pour tester tout de suite !
+        };
+        return cache.SetAsync(key, data, options, token);
     }
 }
