@@ -3,6 +3,8 @@ using Basket.API.Features.Baskets.Commands.AddItemToBasket;
 using Basket.API.Features.Baskets.Commands.DeleteBasket;
 using Basket.API.Features.Baskets.Queries.GetBasketByUserName;
 using Basket.API.Features.Baskets.Commands.UpdateBasketItemQuantity;
+using Basket.API.Features.Baskets.Commands.DeleteBasketItem;
+
 using Basket.API.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -45,20 +47,24 @@ public class BasketsController (ISender sender) : ControllerBase
         var result = await sender.Send(request);
         return CreatedAtAction(nameof(GetBasketByUserName), new { userName }, result);
     }
-
+    
+    
     /// <summary>
-    /// Deletes the shopping basket for the specified user.
+    /// Supprime un article du panier de l'utilisateur spécifié.
     /// </summary>
-    /// <param name="userName">The username whose shopping basket is to be deleted.</param>
-    /// <returns>A boolean value indicating whether the basket was successfully deleted or a not-found response if no basket exists for the user.</returns>
-    [HttpDelete]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(NotFoundObjectResult), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<bool>> DeleteBasket(string userName)
+    /// <param name="userName">Le nom d'utilisateur dont l'article doit être supprimé du panier.</param>
+    /// <param name="productId">L'identifiant du produit à supprimer.</param>
+    /// <returns>Le résultat de l'opération de suppression.</returns>
+    [HttpDelete("items/{productId}")]
+    [ProducesResponseType(typeof(DeleteBasketItemCommandResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DeleteBasketItemCommandResult>> DeleteBasketItem(string userName, string productId)
     {
-        var result = await sender.Send(new DeleteBasketCommand(userName));
-        return Ok(result.IsSuccess);
+        var result = await sender.Send(new DeleteBasketItemCommand(userName, productId));
+        return result.IsSuccess ? Ok(result) : NotFound(result);
     }
+
+
 
     [HttpPost("items")]
     [ProducesResponseType(typeof(AddItemToBasketCommandResult), StatusCodes.Status200OK)]
