@@ -8,6 +8,8 @@ namespace Basket.API.Data.Repositories;
 /// </summary>
 public interface IBasketRepository
 {
+    
+    
     /// <summary>
     /// Deletes the shopping cart associated with a specific user name from the data store.
     /// </summary>
@@ -36,4 +38,9 @@ public interface IBasketRepository
     /// A task that represents the asynchronous operation. The task result contains the created shopping cart.
     /// </returns>
     Task<ShoppingCart> CreateBasketAsync(ShoppingCart basket, CancellationToken cancellationToken = default);
+    public async Task<ShoppingCart> UpdateBasketAsync(ShoppingCart basket, CancellationToken cancellationToken = default)
+    {
+        // Tu peux réutiliser la même logique que CreateBasketAsync :
+        return await CreateBasketAsync(basket, cancellationToken);
+    }
 }
