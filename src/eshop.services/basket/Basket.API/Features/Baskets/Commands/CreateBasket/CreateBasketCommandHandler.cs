@@ -2,6 +2,7 @@ using Basket.API.Data.Repositories;
 using Basket.API.Models;
 using BuildingBlocks.CQRS;
 using Discount.Grpc;
+using Grpc.Core;
 
 namespace Basket.API.Features.Baskets.Commands.CreateBasket;
 
@@ -40,10 +41,15 @@ public class CreateBasketCommandHandler(IBasketRepository repository, DiscountPr
     {
         foreach (var item in cart.Items)
         {
-            var coupon = await discountProtoServiceClient.GetDiscountAsync(new GetDiscountRequest
-                { ProductName = item.ProductName }, cancellationToken: cancellationToken);
-            
-            item.Price -= (decimal)coupon.Amount;
+            try
+            {
+                var coupon = await discountProtoServiceClient.GetDiscountAsync(new GetDiscountRequest
+                    { ProductName = item.ProductName }, cancellationToken: cancellationToken);
+                item.Price -= (decimal)coupon.Amount;
+            }
+            catch (RpcException e)
+            {
+            }
         }
     }
 }
