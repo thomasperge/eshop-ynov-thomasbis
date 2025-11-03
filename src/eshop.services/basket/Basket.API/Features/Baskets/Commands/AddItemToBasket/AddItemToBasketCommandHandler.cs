@@ -17,33 +17,28 @@ public class AddItemToBasketCommandHandler(IBasketRepository repository) : IComm
     /// <returns>Un résultat indiquant le succès de l'opération et incluant le nom d'utilisateur du panier modifié.</returns>
     public async Task<AddItemToBasketCommandResult> Handle(AddItemToBasketCommand request, CancellationToken cancellationToken)
     {
-        // Récupérer le panier existant
-        var cart = await repository.GetBasketByUserNameAsync(request.UserName, cancellationToken);
-        
-        if (cart == null)
+        try
         {
-            // Si le panier n'existe pas, en créer un nouveau
-            cart = new ShoppingCart(request.UserName);
-        }
-        
-        // Vérifier si l'article existe déjà dans le panier
-        var existingItem = cart.Items.FirstOrDefault(i => i.ProductId == request.item.ProductId);
-        
-        if (existingItem != null)
-        {
-            // Mettre à jour la quantité si l'article existe déjà
-            existingItem.Quantity += request.item.Quantity;
-        }
-        else
-        {
-            // Ajouter le nouvel article au panier
+            // Récupérer le panier existant
+            var cart = await repository.GetBasketByUserNameAsync(request.UserName, cancellationToken);
+            
+            // Ajouter l'article au panier (AddItem gère déjà l'incrémentation si existant)
             cart.AddItem(request.item);
+            
+            // Mettre à jour le panier
+            await repository.UpdateBasketAsync(cart, cancellationToken);
+            
+            return new AddItemToBasketCommandResult(true, request.UserName);
         }
-        
-        // Sauvegarder le panier mis à jour
-        await repository.UpdateBasketAsync(cart, cancellationToken);
-        
-        return new AddItemToBasketCommandResult(true, request.UserName);
+        catch
+        {
+            // Le panier n'existe pas, créer un nouveau panier avec cet article
+            var cart = new ShoppingCart(request.UserName);
+            cart.AddItem(request.item);
+            await repository.CreateBasketAsync(cart, cancellationToken);
+            
+            return new AddItemToBasketCommandResult(true, request.UserName);
+        }
     }
     
 }

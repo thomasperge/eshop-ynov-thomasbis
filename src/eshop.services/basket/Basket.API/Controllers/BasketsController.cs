@@ -50,6 +50,20 @@ public class BasketsController (ISender sender) : ControllerBase
     
     
     /// <summary>
+    /// Supprime le panier complet de l'utilisateur spécifié.
+    /// </summary>
+    /// <param name="userName">Le nom d'utilisateur dont le panier doit être supprimé.</param>
+    /// <returns>Le résultat de l'opération de suppression.</returns>
+    [HttpDelete]
+    [ProducesResponseType(typeof(DeleteBasketCommandResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DeleteBasketCommandResult>> DeleteBasket(string userName)
+    {
+        var result = await sender.Send(new DeleteBasketCommand(userName));
+        return result.IsSuccess ? Ok(result) : NotFound(result);
+    }
+    
+    /// <summary>
     /// Supprime un article du panier de l'utilisateur spécifié.
     /// </summary>
     /// <param name="userName">Le nom d'utilisateur dont l'article doit être supprimé du panier.</param>
@@ -66,6 +80,13 @@ public class BasketsController (ISender sender) : ControllerBase
 
 
 
+    /// <summary>
+    /// Ajoute un article au panier de l'utilisateur spécifié.
+    /// </summary>
+    /// <param name="userName">Le nom d'utilisateur dont le panier doit être mis à jour.</param>
+    /// <param name="item">L'article à ajouter au panier.</param>
+    /// <param name="cancellationToken">Le jeton d'annulation pour la requête.</param>
+    /// <returns>Le résultat de l'opération d'ajout.</returns>
     [HttpPost("items")]
     [ProducesResponseType(typeof(AddItemToBasketCommandResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
@@ -79,6 +100,36 @@ public class BasketsController (ISender sender) : ControllerBase
         return Ok(result);
     }
     
+    /// <summary>
+    /// Met à jour la quantité d'un produit dans le panier de l'utilisateur spécifié.
+    /// </summary>
+    /// <param name="userName">Le nom d'utilisateur dont l'article doit être mis à jour.</param>
+    /// <param name="productId">L'identifiant du produit à mettre à jour.</param>
+    /// <param name="quantity">La nouvelle quantité.</param>
+    /// <returns>Le résultat de l'opération de mise à jour.</returns>
+    [HttpPut("items/{productId}")]
+    [ProducesResponseType(typeof(UpdateBasketItemQuantityCommandResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<UpdateBasketItemQuantityCommandResult>> UpdateBasketItemQuantity(
+        [FromRoute] string userName,
+        [FromRoute] string productId,
+        [FromBody] int quantity)
+    {
+        if (quantity <= 0)
+            return BadRequest("La quantité doit être supérieure à 0.");
+            
+        var command = new UpdateBasketItemQuantityCommand(userName, productId, quantity);
+        var result = await sender.Send(command);
+        return result.IsSuccess ? Ok(result) : NotFound(result);
+    }
+    
+    /// <summary>
+    /// Met à jour complètement le panier de l'utilisateur spécifié.
+    /// </summary>
+    /// <param name="userName">Le nom d'utilisateur dont le panier doit être mis à jour.</param>
+    /// <param name="cart">Le panier complet avec les articles mis à jour.</param>
+    /// <returns>Le résultat de l'opération de mise à jour.</returns>
     [HttpPut]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
