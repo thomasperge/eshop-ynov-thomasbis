@@ -1,13 +1,10 @@
-namespace Discount.Grpc.Models;
+namespace Discount.Grpc.DTOs;
 
 /// <summary>
-/// Represents a discount coupon with various types and configurations.
-/// Supports both fixed amount and percentage-based discounts.
+/// Data Transfer Object for creating a new coupon.
 /// </summary>
-public class Coupon
+public class CreateCouponDto
 {
-    public int Id { get; set; }
-    
     /// <summary>
     /// Gets or sets the name of the product this discount applies to. Optional for general coupons.
     /// </summary>
@@ -72,21 +69,5 @@ public class Coupon
     /// Gets or sets the product category this discount applies to (e.g., "Electronics", "Clothing").
     /// </summary>
     public string? Category { get; set; }
-    
-    /// <summary>
-    /// Checks if the discount is currently valid based on dates and active status.
-    /// </summary>
-    public bool IsValid(DateTime now)
-    {
-        if (!IsActive)
-            return false;
-            
-        if (StartDate.HasValue && now < StartDate.Value)
-            return false;
-            
-        if (EndDate.HasValue && now > EndDate.Value)
-            return false;
-            
-        return true;
-    }
 }
+

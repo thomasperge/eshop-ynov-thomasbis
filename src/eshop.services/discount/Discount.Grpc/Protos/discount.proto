@@ -13,10 +13,49 @@ service DiscountProtoService {
   rpc UpdateDiscount (UpdateDiscountRequest) returns (CouponModel);
   rpc DeleteDiscount (DeleteDiscountRequest) returns (DeleteDiscountResponse);
   
+  // Nouvelles opérations
+  rpc GetDiscountByCode (GetDiscountByCodeRequest) returns (CouponModel);
+  rpc GetActiveDiscounts (GetActiveDiscountsRequest) returns (GetActiveDiscountsResponse);
+  rpc ValidateDiscount (ValidateDiscountRequest) returns (ValidateDiscountResponse);
+  rpc CalculateDiscountedPrice (CalculatePriceRequest) returns (CalculatePriceResponse);
+  
 }
 
 message GetDiscountRequest {
   string productName = 1;
+}
+
+message GetDiscountByCodeRequest {
+  string code = 1;
+}
+
+message ValidateDiscountRequest {
+  string code = 1;
+  double orderAmount = 2;
+}
+
+message ValidateDiscountResponse {
+  bool isValid = 1;
+  string message = 2;
+  CouponModel coupon = 3;
+}
+
+message GetActiveDiscountsRequest {
+  string category = 1; // Optional: filter by category
+}
+
+message GetActiveDiscountsResponse {
+  repeated CouponModel coupons = 1;
+}
+
+message CalculatePriceRequest {
+  double originalPrice = 1;
+  CouponModel coupon = 2;
+}
+
+message CalculatePriceResponse {
+  double discountedPrice = 1;
+  double discountAmount = 2;
 }
 
 message CouponModel {
@@ -24,6 +63,18 @@ message CouponModel {
   string productName = 2;
   string description = 3;
   double amount = 4;
+  
+  // Nouveaux champs
+  double discountPercent = 5;
+  string discountType = 6;
+  string code = 7;
+  bool isActive = 8;
+  int64 startDateUnix = 9; // DateTime as Unix timestamp
+  int64 endDateUnix = 10; // DateTime as Unix timestamp
+  double minOrderAmount = 11;
+  double maxDiscountAmount = 12;
+  bool isCumulative = 13;
+  string category = 14;
 }
 
 message CreateDiscountRequest {
