@@ -12,15 +12,15 @@ public class UpdateBasketItemQuantityCommandHandler(IBasketRepository repository
         {
             var basket = await repository.GetBasketByUserNameAsync(request.UserName, cancellationToken);
 
-            var productGuid = Guid.Parse(request.ProductId);
+        var productGuid = Guid.Parse(request.ProductId);
             var item = basket.Items.FirstOrDefault(i => i.ProductId == productGuid);
             
             if (item == null)
-                return new UpdateBasketItemQuantityCommandResult(false);
+            return new UpdateBasketItemQuantityCommandResult(false);
 
-            item.Quantity = request.Quantity;
-            await repository.UpdateBasketAsync(basket, cancellationToken);
-            return new UpdateBasketItemQuantityCommandResult(true);
+        item.Quantity = request.Quantity;
+        await repository.UpdateBasketAsync(basket, cancellationToken);
+        return new UpdateBasketItemQuantityCommandResult(true);
         }
         catch
         {

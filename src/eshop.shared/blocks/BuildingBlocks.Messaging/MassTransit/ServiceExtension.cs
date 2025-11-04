@@ -28,10 +28,22 @@ public static class ServiceExtension
                 
                 config.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(new Uri(configuration["MessageBroker:Host"]!), host =>
+                    var host = configuration["MessageBroker:Host"];
+                    if (string.IsNullOrWhiteSpace(host))
                     {
-                        host.Username(configuration["MessageBroker:UserName"]!);
-                        host.Password(configuration["MessageBroker:Password"]!);
+                        throw new InvalidOperationException(
+                            "MessageBroker:Host configuration is missing or empty. Please configure it in appsettings.json or environment variables.");
+                    }
+                    
+                    cfg.Host(new Uri(host), hostConfig =>
+                    {
+                        var userName = configuration["MessageBroker:UserName"];
+                        var password = configuration["MessageBroker:Password"];
+                        
+                        if (!string.IsNullOrWhiteSpace(userName))
+                            hostConfig.Username(userName);
+                        if (!string.IsNullOrWhiteSpace(password))
+                            hostConfig.Password(password);
                     });
                     
                     cfg.UseMessageRetry(r => r.Exponential(3, 

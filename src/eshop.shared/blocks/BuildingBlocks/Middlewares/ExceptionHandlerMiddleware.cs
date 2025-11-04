@@ -1,7 +1,9 @@
 using System.Text.Json;
 using BuildingBlocks.Exceptions;
 using FluentValidation;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace BuildingBlocks.Middlewares;
@@ -19,7 +21,7 @@ public record ErrorResponse(int StatusCode, string Message, object? Data);
 /// processing of HTTP requests. This middleware ensures that unhandled exceptions
 /// are intercepted, logged, and appropriate responses are sent to the client.
 /// </summary>
-public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionHandlerMiddleware> logger)
+public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionHandlerMiddleware> logger, IHostEnvironment environment)
 {
 
     /// <summary>
@@ -47,11 +49,18 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
 
         var response = exception switch
         {
-            BusinessException ex => new ErrorResponse(400, ex.Message, ex.StackTrace) ,
+            BusinessException ex => new ErrorResponse(400, ex.Message, environment.IsDevelopment() ? ex.StackTrace : null),
             ValidationException ex => 
                 new ErrorResponse(StatusCodes.Status400BadRequest,"Validation failed", 
                     ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage })),
-            _ => new ErrorResponse(StatusCodes.Status500InternalServerError, "An error occurred",  exception.Data),
+            _ => new ErrorResponse(
+                StatusCodes.Status500InternalServerError, 
+                environment.IsDevelopment() ? exception.Message : "An error occurred",
+                environment.IsDevelopment() ? new { 
+                    Message = exception.Message, 
+                    StackTrace = exception.StackTrace, 
+                    InnerException = exception.InnerException?.Message 
+                } : null),
         };
         
         logger.LogError(exception, "An unhandled exception occurred while processing the request.");

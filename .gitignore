@@ -11,6 +11,7 @@
 *.sln.docstates
 *.idea
 *.vscode
+TEST_ORDERING_API_ETAPE1.md
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

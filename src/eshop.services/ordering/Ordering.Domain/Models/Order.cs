@@ -112,4 +112,14 @@ public class Order : Aggregate<OrderId>
         AddDomainEvent(new OrderUpdatedEvent(this));
 
     }
+
+    /// <summary>
+    /// Updates only the status of the order.
+    /// </summary>
+    /// <param name="orderStatus">The new status of the order.</param>
+    public void UpdateStatus(OrderStatus orderStatus)
+    {
+        OrderStatus = orderStatus;
+        AddDomainEvent(new OrderUpdatedEvent(this));
+    }
 }

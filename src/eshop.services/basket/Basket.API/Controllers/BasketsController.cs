@@ -1,4 +1,3 @@
-using Basket.API.Features.Baskets.Commands.CheckOutBasket;
 using Basket.API.Features.Baskets.Commands.CreateBasket;
 using Basket.API.Features.Baskets.Commands.AddItemToBasket;
 using Basket.API.Features.Baskets.Commands.DeleteBasket;
@@ -78,23 +77,76 @@ public class BasketsController (ISender sender) : ControllerBase
         var result = await sender.Send(new DeleteBasketItemCommand(userName, productId));
         return result.IsSuccess ? Ok(result) : NotFound(result);
     }
-    
-    // TODO Update basket product quantity
-    
-    //TODO Delete item in user basket
+
+
+
+    /// <summary>
+    /// Ajoute un article au panier de l'utilisateur spécifié.
+    /// </summary>
+    /// <param name="userName">Le nom d'utilisateur dont le panier doit être mis à jour.</param>
+    /// <param name="item">L'article à ajouter au panier.</param>
+    /// <param name="cancellationToken">Le jeton d'annulation pour la requête.</param>
+    /// <returns>Le résultat de l'opération d'ajout.</returns>
+    [HttpPost("items")]
+    [ProducesResponseType(typeof(AddItemToBasketCommandResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AddItemToBasketCommandResult>> AddItemToBasket(
+        [FromRoute] string userName,
+        [FromBody] ShoppingCartItem item,
+        CancellationToken cancellationToken)
+    {
+        var command = new AddItemToBasketCommand(userName, item);
+        var result = await sender.Send(command, cancellationToken);
+        return Ok(result);
+    }
     
     /// <summary>
-    /// Processes the checkout operation for the specified user's basket.
+    /// Met à jour la quantité d'un produit dans le panier de l'utilisateur spécifié.
     /// </summary>
-    /// <param name="userName">The username whose basket is to be checked out.</param>
-    /// <param name="request">The details of the checkout request, including basket information.</param>
-    /// <returns>The result of the checkout operation, indicating success or failure status.</returns>
-    [HttpPost("Checkout")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status201Created)]
-    public async Task<ActionResult<bool>> CheckOutBasket(string userName, [FromBody] CheckOutBasketCommand request)
+    /// <param name="userName">Le nom d'utilisateur dont l'article doit être mis à jour.</param>
+    /// <param name="productId">L'identifiant du produit à mettre à jour.</param>
+    /// <param name="quantity">La nouvelle quantité.</param>
+    /// <returns>Le résultat de l'opération de mise à jour.</returns>
+    [HttpPut("items/{productId}")]
+    [ProducesResponseType(typeof(UpdateBasketItemQuantityCommandResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<UpdateBasketItemQuantityCommandResult>> UpdateBasketItemQuantity(
+        [FromRoute] string userName,
+        [FromRoute] string productId,
+        [FromBody] int quantity)
     {
-        request.BasketCheckoutDto.UserName = userName;
-        var result = await sender.Send(request);
-        return Ok(result.IsSuccess);
+        if (quantity <= 0)
+            return BadRequest("La quantité doit être supérieure à 0.");
+            
+        var command = new UpdateBasketItemQuantityCommand(userName, productId, quantity);
+        var result = await sender.Send(command);
+        return result.IsSuccess ? Ok(result) : NotFound(result);
+    }
+    
+    /// <summary>
+    /// Met à jour complètement le panier de l'utilisateur spécifié.
+    /// </summary>
+    /// <param name="userName">Le nom d'utilisateur dont le panier doit être mis à jour.</param>
+    /// <param name="cart">Le panier complet avec les articles mis à jour.</param>
+    /// <returns>Le résultat de l'opération de mise à jour.</returns>
+    [HttpPut]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(NotFoundObjectResult), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<bool>> UpdateBasket(string userName, [FromBody] ShoppingCart cart)
+    {
+        if (cart == null || cart.Items == null || !cart.Items.Any())
+            return BadRequest("Le panier est vide ou invalide.");
+        
+        if (!string.Equals(userName, cart.UserName, StringComparison.OrdinalIgnoreCase))
+            return BadRequest("Le nom d'utilisateur du panier ne correspond pas à celui de la route.");
+        
+        var result = await sender.Send(new CreateBasketCommand(cart)); 
+
+        if (result == null)
+            return NotFound($"Aucun panier trouvé pour l'utilisateur : '{userName}'.");
+
+        return Ok(true);
     }
 }

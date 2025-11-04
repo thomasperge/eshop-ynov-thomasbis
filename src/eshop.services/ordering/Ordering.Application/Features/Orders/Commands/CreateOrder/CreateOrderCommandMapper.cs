@@ -11,8 +11,9 @@ public static class CreateOrderCommandMapper
     /// Creates a new Order domain object from the provided OrderDto.
     /// </summary>
     /// <param name="requestOrder">The data transfer object containing order details.</param>
+    /// <param name="customerId">The CustomerId to use for the order (may differ from requestOrder.CustomerId if customer was found by email).</param>
     /// <returns>A new instance of the Order domain object.</returns>
-    public static Order CreateNewOrderFromDto(OrderDto requestOrder)
+    public static Order CreateNewOrderFromDto(OrderDto requestOrder, CustomerId customerId)
     {
         var shippingAddress = Address.Of(requestOrder.ShippingAddress.FirstName, requestOrder.ShippingAddress.LastName, requestOrder.ShippingAddress.EmailAddress,
             requestOrder.ShippingAddress.AddressLine, requestOrder.ShippingAddress.Country, requestOrder.ShippingAddress.State, requestOrder.ShippingAddress.ZipCode);
@@ -20,7 +21,7 @@ public static class CreateOrderCommandMapper
             requestOrder.BillingAddress.Country, requestOrder.BillingAddress.State, requestOrder.BillingAddress.ZipCode);
         var payment = Payment.Of(requestOrder.Payment.CardName, requestOrder.Payment.CardNumber, requestOrder.Payment.Expiration, requestOrder.Payment.Cvv, requestOrder.Payment.PaymentMethod);
        
-        var order = Order.Create(customerId: CustomerId.Of(requestOrder.CustomerId), orderName : OrderName.Of(requestOrder.OrderName), shippingAddress: shippingAddress, billingAddress: billingAddress, payment: payment);
+        var order = Order.Create(customerId: customerId, orderName : OrderName.Of(requestOrder.OrderName), shippingAddress: shippingAddress, billingAddress: billingAddress, payment: payment);
        
         foreach (var orderItem in requestOrder.OrderItems)
         {
