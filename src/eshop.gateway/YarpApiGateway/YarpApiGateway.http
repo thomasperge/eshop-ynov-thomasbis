@@ -1,6 +1,51 @@
-@YarpApiGateway_HostAddress = http://localhost:5242
+@YarpApiGateway_HostAddress = http://localhost:7000
 
-GET {{YarpApiGateway_HostAddress}}/weatherforecast/
+### ============================================
+### API GATEWAY - Point d'entrée unique
+### ============================================
+### Toutes les requêtes passent maintenant par le Gateway (port 7000)
+### Au lieu d'appeler directement les services (5050, 5051, 5178)
+
+### ============================================
+### CATALOG SERVICE
+### ============================================
+### ❌ Ancien : http://localhost:5050/Products
+### ✅ Nouveau : http://localhost:7000/catalog-service/Products
+
+### Get all products
+GET {{YarpApiGateway_HostAddress}}/catalog-service/Products
+Accept: application/json
+
+### Get product by ID
+GET {{YarpApiGateway_HostAddress}}/catalog-service/Products/{productId}
+Accept: application/json
+
+### ============================================
+### BASKET SERVICE
+### ============================================
+### ❌ Ancien : http://localhost:5051/Baskets/swn
+### ✅ Nouveau : http://localhost:7000/basket-service/Baskets/swn
+
+### Get basket by username
+GET {{YarpApiGateway_HostAddress}}/basket-service/Baskets/swn
+Accept: application/json
+
+### Create/Update basket
+POST {{YarpApiGateway_HostAddress}}/basket-service/Baskets/swn
+Content-Type: application/json
+
+### ============================================
+### ORDERING SERVICE
+### ============================================
+### ❌ Ancien : http://localhost:5178/Orders
+### ✅ Nouveau : http://localhost:7000/ordering-service/Orders
+
+### Get all orders
+GET {{YarpApiGateway_HostAddress}}/ordering-service/Orders
+Accept: application/json
+
+### Get orders by customer ID
+GET {{YarpApiGateway_HostAddress}}/ordering-service/Orders/customer/{customerId}
 Accept: application/json
 
 ###
