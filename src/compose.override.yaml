@@ -129,3 +129,11 @@
       - MessageBroker__UserName=${RABBITMQ_USER}
       - MessageBroker__Password=${RABBITMQ_PASSWORD}
       - FeatureManagement__OrderFulfilment=false
+        
+  ### API Gateway ###    
+
+  yarpapigateway:
+    ports:
+      - "6064:${GATEWAY_API_PORT}" #http
+    environment:
+      - ASPNETCORE_HTTP_PORTS=${GATEWAY_API_PORT}

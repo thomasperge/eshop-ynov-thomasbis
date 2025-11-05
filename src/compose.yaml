@@ -112,6 +112,32 @@
         condition: service_healthy
         required: true
         restart: true
+        
+  ### API Gateway ###    
+  
+  yarpapigateway:
+    image: yarpapigateway
+    container_name: yarpapigateway
+    build:
+      context: .
+      dockerfile: eshop.gateway/YarpApiGateway/Dockerfile
+    networks:
+      - ordering_network
+      - basket_network
+      - catalog_network
+    depends_on:
+      ordering.api:
+        condition: service_started
+        required: true
+        restart: true
+      basket.api:
+        condition: service_started
+        required: true
+        restart: true
+      catalog.api:
+        condition: service_started
+        required: true
+        restart: true
 
 ### Shared infrastructure ###
 volumes:
@@ -139,4 +165,6 @@ networks:
   ordering_network:
     name: ordering_network
   messageBroker_network:
-    name: messageBroker_network
+    name: messageBroker_network 
+      
+
