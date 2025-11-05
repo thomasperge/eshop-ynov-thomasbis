@@ -1,6 +1,7 @@
 using Catalog.API.Features.Products.Commands.CreateProduct;
 using Catalog.API.Features.Products.Commands.DeleteProduct;
 using Catalog.API.Features.Products.Commands.ImportProducts;
+using Catalog.API.Features.Products.Commands.ReserveProductStock;
 using Catalog.API.Features.Products.Commands.UpdateProduct;
 using Catalog.API.Features.Products.Queries.ExportProducts;
 using Catalog.API.Features.Products.Queries.GetProductById;
@@ -87,6 +88,40 @@ public class ProductsController(ISender sender) : ControllerBase
         var result = await sender.Send(new DeleteProductCommand(id));
         return Ok(result.IsSuccessful);
     }
+
+    /// <summary>
+    /// Reserves stock for a product.
+    /// </summary>
+    /// <param name="id">The unique identifier of the product.</param>
+    /// <param name="request">The reservation request containing the quantity to reserve.</param>
+    /// <returns>The result of the stock reservation operation.</returns>
+    [HttpPost("{id:guid}/reserve")]
+    [ProducesResponseType(typeof(ReserveProductStockCommandResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ReserveProductStockCommandResult), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ReserveProductStockCommandResult), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ReserveProductStockCommandResult>> ReserveProductStock(Guid id, [FromBody] ReserveStockRequest request)
+    {
+        var result = await sender.Send(new ReserveProductStockCommand(id, request.Quantity));
+        
+        if (!result.IsSuccess)
+        {
+            // Check if product not found (404) or other error (400)
+            if (result.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound(result);
+            }
+            
+            // Stock insufficient or invalid quantity (400)
+            return BadRequest(result);
+        }
+        
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Request model for stock reservation.
+    /// </summary>
+    public record ReserveStockRequest(int Quantity);
 
     /// <summary>
     /// Imports products from an Excel file.

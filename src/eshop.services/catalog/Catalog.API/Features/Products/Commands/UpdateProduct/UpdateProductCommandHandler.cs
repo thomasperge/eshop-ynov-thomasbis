@@ -32,6 +32,7 @@ public class UpdateProductCommandHandler(IDocumentSession documentSession) : ICo
         product.Price = request.Price;
         product.ImageFile = request.ImageFile;
         product.Categories = request.Categories;
+        product.Stock = request.Stock;
 
         documentSession.Update(product);
         await documentSession.SaveChangesAsync(cancellationToken);

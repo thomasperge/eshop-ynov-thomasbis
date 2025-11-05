@@ -4,6 +4,8 @@ using Basket.API.Features.Baskets.Commands.DeleteBasket;
 using Basket.API.Features.Baskets.Queries.GetBasketByUserName;
 using Basket.API.Features.Baskets.Commands.UpdateBasketItemQuantity;
 using Basket.API.Features.Baskets.Commands.DeleteBasketItem;
+using Basket.API.Features.Baskets.Commands.CheckOutBasket;
+using Basket.API.Features.Baskets.Dtos;
 
 using Basket.API.Models;
 using MediatR;
@@ -148,5 +150,28 @@ public class BasketsController (ISender sender) : ControllerBase
             return NotFound($"Aucun panier trouvé pour l'utilisateur : '{userName}'.");
 
         return Ok(true);
+    }
+
+    /// <summary>
+    /// Effectue le checkout du panier de l'utilisateur spécifié.
+    /// Publie un événement BasketCheckoutEvent et supprime le panier après succès.
+    /// </summary>
+    /// <param name="userName">Le nom d'utilisateur dont le panier doit être checkout.</param>
+    /// <param name="checkoutDto">Les détails du checkout (adresse, paiement, etc.).</param>
+    /// <returns>Le résultat de l'opération de checkout.</returns>
+    [HttpPost("checkout")]
+    [ProducesResponseType(typeof(CheckOutBasketCommandResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BadRequestObjectResult), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(NotFoundObjectResult), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CheckOutBasketCommandResult>> CheckOutBasket(
+        [FromRoute] string userName,
+        [FromBody] BasketCheckoutDto checkoutDto)
+    {
+        if (!string.Equals(userName, checkoutDto.UserName, StringComparison.OrdinalIgnoreCase))
+            return BadRequest("Le nom d'utilisateur du checkout ne correspond pas à celui de la route.");
+        
+        var command = new CheckOutBasketCommand(checkoutDto);
+        var result = await sender.Send(command);
+        return Ok(result);
     }
 }

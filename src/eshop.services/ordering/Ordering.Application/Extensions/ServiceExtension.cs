@@ -4,6 +4,7 @@ using BuildingBlocks.Messaging.MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.FeatureManagement;
+using Ordering.Application.Services;
 
 namespace Ordering.Application.Extensions;
 
@@ -20,6 +21,14 @@ public static class ServiceExtension
 
         services.AddFeatureManagement();
         services.AddMessageBroker(configuration, Assembly.GetExecutingAssembly());
+        
+        // Register Catalog.API HTTP Client
+        var catalogApiUrl = configuration["CatalogSettings:BaseUrl"] ?? "http://localhost:5050";
+        services.AddHttpClient<ICatalogService, CatalogService>(client =>
+        {
+            client.BaseAddress = new Uri(catalogApiUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
         
         return services;
     }

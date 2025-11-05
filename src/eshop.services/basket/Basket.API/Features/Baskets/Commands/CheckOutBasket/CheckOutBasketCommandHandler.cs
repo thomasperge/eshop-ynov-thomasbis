@@ -34,6 +34,14 @@ public class CheckOutBasketCommandHandler(IBasketRepository repository, IPublish
         var eventMessage = request.BasketCheckoutDto.Adapt<BasketCheckoutEvent>();
         eventMessage.TotalPrice = basket.Total;
         
+        // Map basket items to event items
+        eventMessage.Items = basket.Items.Select(item => new BuildingBlocks.Messaging.Events.BasketItemDto
+        {
+            ProductId = item.ProductId,
+            Quantity = item.Quantity,
+            Price = item.Price
+        }).ToList();
+        
         await publishEndpoint.Publish(eventMessage, cancellationToken).ConfigureAwait(false);
         
         await repository.DeleteBasketAsync(request.BasketCheckoutDto.UserName, cancellationToken).ConfigureAwait(false);

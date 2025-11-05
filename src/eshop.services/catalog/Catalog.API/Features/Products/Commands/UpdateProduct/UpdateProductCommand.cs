@@ -15,11 +15,13 @@ namespace Catalog.API.Features.Products.Commands.UpdateProduct;
 /// <param name="Price">The new price of the product.</param>
 /// <param name="ImageFile">The name or path of the image file associated with the product.</param>
 /// <param name="Categories">A list of categories to which the product belongs.</param>
+/// <param name="Stock">The available stock quantity for the product.</param>
 public record UpdateProductCommand(
     Guid Id,
     string Name,
     string Description,
     decimal Price,
     string ImageFile,
-    List<string> Categories)
+    List<string> Categories,
+    int Stock = 0)
     : ICommand<UpdateProductCommandResult>;
