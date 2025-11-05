@@ -172,6 +172,13 @@ public class BasketsController (ISender sender) : ControllerBase
         
         var command = new CheckOutBasketCommand(checkoutDto);
         var result = await sender.Send(command);
+        
+        // If checkout failed (e.g., stock insufficient), return 400 Bad Request
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result);
+        }
+        
         return Ok(result);
     }
 }

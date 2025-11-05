@@ -9,4 +9,7 @@ namespace Basket.API.Features.Baskets.Commands.CheckOutBasket;
 /// <param name="IsSuccess">
 /// A boolean value that specifies the success status of the checkout operation.
 /// </param>
-public record CheckOutBasketCommandResult(bool IsSuccess);
+/// <param name="ErrorMessage">
+/// Optional error message if the checkout operation failed.
+/// </param>
+public record CheckOutBasketCommandResult(bool IsSuccess, string? ErrorMessage = null);
