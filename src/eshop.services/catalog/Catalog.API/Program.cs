@@ -5,6 +5,7 @@ using FluentValidation;
 using HealthChecks.UI.Client;
 using Marten;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,15 +41,42 @@ if(builder.Environment.IsDevelopment())
 builder.Services.AddHealthChecks()
     .AddNpgSql(configuration.GetConnectionString("CatalogConnection")!);
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Catalog API",
+        Version = "v1",
+        Description = "API pour la gestion du catalogue de produits",
+        Contact = new OpenApiContact
+        {
+            Name = "eShop Team",
+            Email = "support@eshop.com"
+        }
+    });
+    
+    // Inclure les commentaires XML si disponibles
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
+});
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Catalog API v1");
+        c.RoutePrefix = string.Empty; // Swagger UI à la racine
+    });
 }
 
 app.UseHttpsRedirection();

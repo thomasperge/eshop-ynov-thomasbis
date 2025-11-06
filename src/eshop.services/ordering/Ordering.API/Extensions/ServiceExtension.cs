@@ -1,6 +1,7 @@
 using BuildingBlocks.Middlewares;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.OpenApi.Models;
 
 namespace Ordering.API.Extensions;
 
@@ -20,7 +21,22 @@ public static class ServiceExtension
     {
         services.AddControllers();
         
-        services.AddOpenApi();
+        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "Ordering API",
+                Version = "v1",
+                Description = "API pour la gestion des commandes",
+                Contact = new OpenApiContact
+                {
+                    Name = "eShop Team",
+                    Email = "support@eshop.com"
+                }
+            });
+        });
 
         var connectionString = configuration.GetConnectionString("OrderingConnection");
         services.AddHealthChecks()
@@ -36,6 +52,17 @@ public static class ServiceExtension
     /// <returns>The configured web application instance with API-specific middleware and components applied.</returns>
     public static WebApplication UseApiServices(this WebApplication app)
     {
+        // Configure Swagger UI in Development
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ordering API v1");
+                c.RoutePrefix = string.Empty; // Swagger UI à la racine
+            });
+        }
+
         app.UseHttpsRedirection();
 
         app.UseAuthorization();

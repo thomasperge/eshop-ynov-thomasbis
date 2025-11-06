@@ -2,6 +2,7 @@ using Discount.Grpc.Data;
 using Discount.Grpc.Data.Extensions;
 using Discount.Grpc.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,8 +24,22 @@ builder.Services.AddDbContext<DiscountContext>(options => options.UseSqlite(conf
 // Add business logic service
 builder.Services.AddScoped<IDiscountCalculationService, DiscountCalculationService>();
 
-// Add OpenAPI/Swagger support
-builder.Services.AddOpenApi();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Discount gRPC API",
+        Version = "v1",
+        Description = "API pour la gestion des réductions et coupons. Service gRPC avec endpoints REST.",
+        Contact = new OpenApiContact
+        {
+            Name = "eShop Team",
+            Email = "support@eshop.com"
+        }
+    });
+});
 
 var app = builder.Build();
 
@@ -34,7 +49,12 @@ app.UseCustomMigration();
 // IMPORTANT: MapGrpcService doit être appelé APRÈS MapControllers pour éviter le conflit HTTP/2
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Discount gRPC API v1");
+        c.RoutePrefix = string.Empty; // Swagger UI à la racine
+    });
 }
 
 app.MapControllers();
